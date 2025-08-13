@@ -97,7 +97,8 @@ function App() {
     if (!textFieldRef.current) return;
     const bytes = bitMapRef.current;
     let binary = "";
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < bytes.length; i++)
+      binary += String.fromCharCode(bytes[i]);
     const base64 = btoa(binary);
 
     textFieldRef.current.value = base64;
