@@ -154,12 +154,6 @@ function App() {
       <div className="h-full flex flex-col w-[600px]">
         <div className="flex gap-2 items-center">
           <h1 className="text-2xl">Base 64 output</h1>
-          <button
-            className="bg-slate-400 border border-amber-400 px-2 py-1 rounded-md hover:brightness-125 cursor-pointer"
-            onClick={encode}
-          >
-            Encode
-          </button>
         </div>
         <textarea
           className="w-full h-full border-slate-500 border p-1"
