@@ -109,7 +109,7 @@ function App() {
   }
 
   return (
-    <div className="w-screen relative h-screen bg-slate-700 flex justify-center items-center font-mono text-white">
+    <div className="w-screen relative h-screen bg-slate-700 flex p-2 gap-4 items-center font-mono text-white">
       <svg
         width={SCALED_SIDE}
         height={SCALED_SIDE}
@@ -118,11 +118,24 @@ function App() {
       >
         {pixels}
       </svg>
-      <div className="absolute right-2 top-2 flex flex-col gap-4 bg-slate-800 rounded-md">
-        <button className="bg-slate-600 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer">
+      <div className="h-full">
+        <h1>Base 64 output</h1>
+      </div>
+      <div className="absolute right-2 top-2 flex flex-col gap-4 bg-slate-600 p-2 rounded-md">
+        <button
+          className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+          onClick={() => {
+            userStateRef.current.drawMode = DrawMode.DRAW;
+          }}
+        >
           Draw
         </button>
-        <button className="bg-slate-600 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer">
+        <button
+          className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+          onClick={() => {
+            userStateRef.current.drawMode = DrawMode.ERASE;
+          }}
+        >
           Erase
         </button>
       </div>
