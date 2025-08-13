@@ -12,8 +12,14 @@ const DOTMATRIX_SIDE = 64;
 const SPACING = 2;
 const SCALED_SIDE = DOTMATRIX_SIDE * (SCALE + SPACING);
 
+enum DrawMode {
+  DRAW = 0,
+  ERASE = 1,
+}
+
 type UserState = {
   mouseDown: boolean;
+  drawMode: DrawMode;
 };
 
 interface CircleProps {
@@ -36,9 +42,12 @@ const Circle: FC<CircleProps> = ({
   const index = y * DOTMATRIX_SIDE + x;
 
   const handleMouseOver = () => {
-    if (!userStateRef.current.mouseDown) return;
+    const userState = userStateRef.current;
 
-    setColour("red");
+    if (!userState.mouseDown) return;
+    const newColour = userState.drawMode === 0 ? "red" : "grey";
+
+    setColour(newColour);
     bitMapRef.current[index] = 1;
   };
 
@@ -61,7 +70,10 @@ function App() {
   const pixelsRef = useRef<Record<string, SVGCircleElement>>({});
   const bitMapRef = useRef(Array(DOTMATRIX_SIDE * DOTMATRIX_SIDE).fill(0));
 
-  const userStateRef = useRef<UserState>({ mouseDown: false });
+  const userStateRef = useRef<UserState>({
+    mouseDown: false,
+    drawMode: DrawMode.DRAW,
+  });
 
   useEffect(() => {
     const handleMouseDown = () => {
@@ -97,7 +109,7 @@ function App() {
   }
 
   return (
-    <div className="w-screen h-screen bg-slate-700 flex justify-center items-center">
+    <div className="w-screen relative h-screen bg-slate-700 flex justify-center items-center font-mono text-white">
       <svg
         width={SCALED_SIDE}
         height={SCALED_SIDE}
@@ -106,6 +118,14 @@ function App() {
       >
         {pixels}
       </svg>
+      <div className="absolute right-2 top-2 flex flex-col gap-4 bg-slate-800 rounded-md">
+        <button className="bg-slate-600 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer">
+          Draw
+        </button>
+        <button className="bg-slate-600 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer">
+          Erase
+        </button>
+      </div>
     </div>
   );
 }
