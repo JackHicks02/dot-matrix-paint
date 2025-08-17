@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FC,
@@ -7,10 +8,8 @@ import {
   type RefObject,
 } from "react";
 
-const SCALE = 12;
 const DOTMATRIX_SIDE = 64;
 const SPACING = 2;
-const SCALED_SIDE = DOTMATRIX_SIDE * (SCALE + SPACING);
 
 enum DrawMode {
   DRAW = 0,
@@ -31,6 +30,7 @@ const getBit = (bit: number): [number, number] => {
 interface CircleProps {
   x: number;
   y: number;
+  width: number;
   pixelsRef: RefObject<Record<string, SVGCircleElement>>;
   bitMapRef: RefObject<Uint8Array>;
   userStateRef: RefObject<UserState>;
@@ -40,6 +40,7 @@ interface CircleProps {
 const Circle: FC<CircleProps> = ({
   x,
   y,
+  width,
   pixelsRef,
   bitMapRef,
   userStateRef,
@@ -59,7 +60,6 @@ const Circle: FC<CircleProps> = ({
       bitMapRef.current[byte] &= ~mask;
       setColour("darkgrey");
     }
-
     handleDraw();
   };
 
@@ -75,9 +75,9 @@ const Circle: FC<CircleProps> = ({
 
   return (
     <circle
-      cx={x * (SCALE + SPACING) + SCALE / 2}
-      cy={y * (SCALE + SPACING) + SCALE / 2}
-      r={SCALE / 2}
+      cx={x * (width + SPACING) + width / 2}
+      cy={y * (width + SPACING) + width / 2}
+      r={width / 2}
       fill={colour}
       ref={(el) => {
         if (el) pixelsRef.current[`${x}-${y}`] = el;
@@ -92,6 +92,8 @@ function App() {
   const pixelsRef = useRef<Record<string, SVGCircleElement>>({});
   const bitMapRef = useRef(new Uint8Array(512));
   const textFieldRef = useRef<HTMLTextAreaElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [sideLength, setSideLength] = useState(0);
 
   const encode = () => {
     if (!textFieldRef.current) return;
@@ -100,7 +102,6 @@ function App() {
     for (let i = 0; i < bytes.length; i++)
       binary += String.fromCharCode(bytes[i]);
     const base64 = btoa(binary);
-
     textFieldRef.current.value = base64;
   };
 
@@ -124,7 +125,31 @@ function App() {
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) return;
+
+    const setSize = () => {
+      const { clientWidth, clientHeight } = container;
+      const _sideLength =
+        clientWidth > clientHeight ? clientHeight : clientWidth;
+
+      setSideLength(_sideLength);
+    };
+
+    window.addEventListener("resize", setSize);
+
+    setSize();
+    return () => {
+      window.removeEventListener("resize", setSize);
+    };
+  }, []);
+
   const pixels: ReactElement[] = [];
+  const pixelWidth =
+    (sideLength - SPACING * (DOTMATRIX_SIDE - 1)) / DOTMATRIX_SIDE;
+
   for (let y = 0; y < DOTMATRIX_SIDE; y++) {
     for (let x = 0; x < DOTMATRIX_SIDE; x++) {
       pixels.push(
@@ -132,6 +157,7 @@ function App() {
           key={`${x}-${y}`}
           x={x}
           y={y}
+          width={pixelWidth}
           pixelsRef={pixelsRef}
           bitMapRef={bitMapRef}
           userStateRef={userStateRef}
@@ -142,42 +168,49 @@ function App() {
   }
 
   return (
-    <div className="w-screen relative h-screen bg-slate-700 flex p-2 gap-4 items-center font-mono text-white">
-      <svg
-        width={SCALED_SIDE}
-        height={SCALED_SIDE}
-        style={{ width: SCALED_SIDE, height: SCALED_SIDE }}
-        className="bg-slate-900"
+    <div className="w-screen relative h-screen overflow-hidden bg-slate-700 flex p-2 gap-4 items-center font-mono text-white">
+      <div
+        className="h-full w-full  overflow-hidden flex flex-col"
+        style={{ maxWidth: "67%" }}
       >
-        {pixels}
-      </svg>
+        <div className="flex-1 flex" ref={containerRef}>
+          <svg
+            width={sideLength}
+            height={sideLength}
+            className="bg-slate-900 flex-1"
+          >
+            {pixels}
+          </svg>
+        </div>
+        <div className="h-fit flex gap-2">
+          <button
+            className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+            onClick={() => {
+              userStateRef.current.drawMode = DrawMode.DRAW;
+            }}
+          >
+            Draw
+          </button>
+          <button
+            className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+            onClick={() => {
+              userStateRef.current.drawMode = DrawMode.ERASE;
+            }}
+          >
+            Erase
+          </button>
+        </div>
+      </div>
       <div className="h-full flex flex-col w-[600px]">
         <div className="flex gap-2 items-center">
           <h1 className="text-2xl">Base 64 output</h1>
         </div>
         <textarea
+          spellCheck={false}
           className="w-full h-full border-slate-500 border p-1"
           ref={textFieldRef}
           defaultValue=""
         />
-      </div>
-      <div className="absolute right-2 top-2 flex flex-col gap-4 bg-slate-600 p-2 rounded-md">
-        <button
-          className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
-          onClick={() => {
-            userStateRef.current.drawMode = DrawMode.DRAW;
-          }}
-        >
-          Draw
-        </button>
-        <button
-          className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
-          onClick={() => {
-            userStateRef.current.drawMode = DrawMode.ERASE;
-          }}
-        >
-          Erase
-        </button>
       </div>
     </div>
   );
