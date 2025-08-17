@@ -31,7 +31,12 @@ interface CircleProps {
   x: number;
   y: number;
   width: number;
-  pixelsRef: RefObject<Record<string, SVGCircleElement>>;
+  pixelsRef: RefObject<
+    Record<
+      string,
+      { elem: SVGCircleElement; setColour: (colour: string) => void }
+    >
+  >;
   bitMapRef: RefObject<Uint8Array>;
   userStateRef: RefObject<UserState>;
   handleDraw: () => void;
@@ -80,7 +85,8 @@ const Circle: FC<CircleProps> = ({
       r={width / 2}
       fill={colour}
       ref={(el) => {
-        if (el) pixelsRef.current[`${x}-${y}`] = el;
+        if (!el) return;
+        pixelsRef.current[`${x}-${y}`] = { elem: el, setColour };
       }}
       onMouseOver={handleMouseOver}
       onMouseDown={handleMouseDown}
@@ -89,7 +95,12 @@ const Circle: FC<CircleProps> = ({
 };
 
 function App() {
-  const pixelsRef = useRef<Record<string, SVGCircleElement>>({});
+  const pixelsRef = useRef<
+    Record<
+      string,
+      { elem: SVGCircleElement; setColour: (colour: string) => void }
+    >
+  >({});
   const bitMapRef = useRef(new Uint8Array(512));
   const textFieldRef = useRef<HTMLTextAreaElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -167,11 +178,23 @@ function App() {
     }
   }
 
+  const handleClearAll = () => {
+    const textField = textFieldRef.current;
+
+    if (!textField) return;
+
+    Object.values(pixelsRef.current).forEach(({ setColour }) => {
+      setColour("darkGrey");
+    });
+    bitMapRef.current = new Uint8Array(512);
+    textField.value = "";
+  };
+
   return (
     <div className="w-screen relative h-screen overflow-hidden bg-slate-700 flex p-2 gap-4 items-center font-mono text-white">
       <div
         className="h-full w-full  overflow-hidden flex flex-col"
-        style={{ maxWidth: "67%" }}
+        style={{ maxWidth: "60%" }}
       >
         <div className="flex-1 flex" ref={containerRef}>
           <svg
@@ -184,7 +207,7 @@ function App() {
         </div>
         <div className="h-fit flex gap-2">
           <button
-            className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+            className="bg-slate-500 border border-slate-200 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
             onClick={() => {
               userStateRef.current.drawMode = DrawMode.DRAW;
             }}
@@ -192,16 +215,22 @@ function App() {
             Draw
           </button>
           <button
-            className="bg-slate-400 border border-amber-400 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+            className="bg-slate-500 border border-slate-200 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
             onClick={() => {
               userStateRef.current.drawMode = DrawMode.ERASE;
             }}
           >
             Erase
           </button>
+          <button
+            className="bg-slate-500 border border-slate-200 px-4 py-2 rounded-md hover:brightness-125 cursor-pointer"
+            onClick={handleClearAll}
+          >
+            Clear
+          </button>
         </div>
       </div>
-      <div className="h-full flex flex-col w-[600px]">
+      <div className="h-full flex flex-col w-full">
         <div className="flex gap-2 items-center">
           <h1 className="text-2xl">Base 64 output</h1>
         </div>
