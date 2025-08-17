@@ -23,7 +23,7 @@ type UserState = {
 
 const getBit = (bit: number): [number, number] => {
   const byte = Math.floor(bit / 8);
-  const offset = 7 - (bit % 8);
+  const offset = bit % 8;
   return [byte, offset];
 };
 
